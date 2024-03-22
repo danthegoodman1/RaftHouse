@@ -32,3 +32,9 @@ RaftHouse should be exposed over two endpoints: A read-only eventually consisten
 Any time a write occurs, or a setting is changed, it must go over the leader endpoint (read-write).
 
 You don't actually have to define a read-only endpoint. Any `host` value that does not match the `LEADER_HOST` env var will query the local instance of ClickHouse.
+
+## Optimizations
+
+Multi-group raft for shards.
+
+Using async writes internally, then flushing them with the `Sync` method on the state machine. This would leverage the internal batching as well.

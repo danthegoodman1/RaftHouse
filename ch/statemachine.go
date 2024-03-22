@@ -28,7 +28,7 @@ func (c *CHStateMachine) Open(stopc <-chan struct{}) (uint64, error) {
 			return fmt.Errorf("error in txn.Get: %w", err)
 		}
 		return item.Value(func(val []byte) error {
-			binary.LittleEndian.PutUint64(val, idx)
+			idx = binary.LittleEndian.Uint64(val)
 			return nil
 		})
 	})
@@ -40,8 +40,33 @@ func (c *CHStateMachine) Open(stopc <-chan struct{}) (uint64, error) {
 }
 
 func (c *CHStateMachine) Update(entries []statemachine.Entry) ([]statemachine.Entry, error) {
-	// TODO implement me
-	panic("implement me")
+	var maxIdx uint64 = 0
+	for idx, ent := range entries {
+		if ent.Index > maxIdx {
+			maxIdx = ent.Index
+		}
+
+		// TODO execute queries to CH
+
+		entries[idx].Result = statemachine.Result{
+			Value: uint64(len(ent.Cmd)), // Just give it something deterministic
+		}
+	}
+
+	var maxIdxBytes []byte
+	binary.LittleEndian.PutUint64(maxIdxBytes, maxIdx)
+	err := KV.Update(func(txn *badger.Txn) error {
+		err := txn.Set([]byte(RaftIndexID), maxIdxBytes)
+		if err != nil {
+			return fmt.Errorf("error in txn.Set: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error in setting raft index (I probably need a full wipe to recover): %w", err)
+	}
+
+	return entries, nil
 }
 
 func (c *CHStateMachine) Lookup(i interface{}) (interface{}, error) {
