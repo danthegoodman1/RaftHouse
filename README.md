@@ -2,7 +2,7 @@
 
 On this episode of "how much can I mangle ClickHouse?", we add the raft consensus protocol in front of Clickhouse.
 
-"But Dan, ClickHouse already has replication with (Zoo)Keeper, why are you doing this?" I hear you ask.
+_"But Dan, ClickHouse already has replication with (Zoo)Keeper, why are you doing this?"_ I hear you ask.
 
 The problem with the existing replication method is that it's eventually consistent. [Their strategies for guaranteeing consistency](https://clickhouse.com/docs/knowledgebase/read_consistency#talking-to-a-random-node) (read your writes) are pretty disappointing.
 
@@ -13,6 +13,14 @@ There are some cases where we need the power of ClickHouse (fast columnar reads,
 "Clickhouse shards", yes, but not ClickHouse shards. Multi-group raft serves as the PERFECT tool to introduce sharding at the raft level. Because ClickHouse already makes re-sharding a PITA, we can leverage this fault with using simple hashing for choosing a raft group. I've not figured out how to do that elegantly yet, but it will work once I do! (maybe a connection pool for each hash token).
 
 RaftHouse is run on the same node as ClickHouse, similar to how you might run Keeper on the same nodes.
+
+_"Can't you just run queries against a single node?"_
+
+Yes, but now you're relying on that single node being up. If it goes down, how do you select another node that has the most upto date data? How do you handle waiting for the original node to come back up? Raft handles this all for you!
+
+_"Can you just run Raft on each node, and then run your processes as observers to find the leader?"_
+
+Insightful question! Not only does this require you integrating raft into your code, or hitting some API to ask for raft, but there are still situations where it could change after the fact. Frankly, this relies too much on the implementation/developer and is a recipe for disaster.
 
 ## Known Limitations
 
