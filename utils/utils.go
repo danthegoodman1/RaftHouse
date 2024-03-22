@@ -40,6 +40,15 @@ func GetEnvOrDefault(env, defaultVal string) string {
 	}
 }
 
+func MustEnv(env string) string {
+	e := os.Getenv(env)
+	if e == "" {
+		panic(fmt.Sprintf("missing env var '%s'", env))
+	} else {
+		return e
+	}
+}
+
 func GetEnvOrDefaultInt(env string, defaultVal int64) int64 {
 	e := os.Getenv(env)
 	if e == "" {
