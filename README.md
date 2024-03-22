@@ -26,6 +26,10 @@ _"What about the `insert_quorum` setting?"_
 
 This requires all nodes to be online. Not acceptable because it's not required for consistency. What's the point of replicas if you can't insert when they are all alive? In the use cases we're building, we're only selecting during recovery, but inserting all the time, which is the opposite pattern this setting is optimized for.
 
+_"What about the `select_sequential_consistency` setting?"
+
+Astute observation! Yes this works in many cases, but puts a lot of load on Keeper, which is probably not as performant as RaftHouse.
+
 ## Known Limitations
 
 1. Cannot do non-deterministic operations like rand and time based stuff for inserts, as results will be different on each node. Do all time and randomness in your code!
