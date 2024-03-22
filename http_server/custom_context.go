@@ -3,9 +3,10 @@ package http_server
 import (
 	"context"
 	"errors"
+	"github.com/danthegoodman1/RaftHouse/utils"
 	"net/http"
 
-	"github.com/danthegoodman1/GoAPITemplate/gologger"
+	"github.com/danthegoodman1/RaftHouse/gologger"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog"
@@ -13,8 +14,9 @@ import (
 
 type CustomContext struct {
 	echo.Context
-	RequestID string
-	UserID    string
+	RequestID    string
+	UserID       string
+	TargetLeader bool // Whether this request is targeting the leader
 }
 
 func CreateReqContext(next echo.HandlerFunc) echo.HandlerFunc {
@@ -27,9 +29,11 @@ func CreateReqContext(next echo.HandlerFunc) echo.HandlerFunc {
 		logger.UpdateContext(func(c zerolog.Context) zerolog.Context {
 			return c.Str("reqID", reqID)
 		})
+		targetingLeader := c.Request().Host == utils.LEADER_HOST
 		cc := &CustomContext{
-			Context:   c,
-			RequestID: reqID,
+			Context:      c,
+			RequestID:    reqID,
+			TargetLeader: targetingLeader,
 		}
 		return next(cc)
 	}

@@ -1,16 +1,18 @@
 # RaftHouse
 
-On this episode of "how much can I mangle Clickhouse?", we add the raft consensus protocol in front of Clickhouse.
+On this episode of "how much can I mangle ClickHouse?", we add the raft consensus protocol in front of Clickhouse.
 
-"But Dan, Clickhouse already has replication with (Zoo)Keeper, why are you doing this?" I hear you ask.
+"But Dan, ClickHouse already has replication with (Zoo)Keeper, why are you doing this?" I hear you ask.
 
 The problem with the existing replication method is that it's eventually consistent. [Their strategies for guaranteeing consistency](https://clickhouse.com/docs/knowledgebase/read_consistency#talking-to-a-random-node) (read your writes) are pretty disappointing.
 
-There are some cases where we need the power of Clickhouse (fast columnar reads, extensive query language, materialized view framework), high availability, and the ability to have consistent reads. In this case, we can stick raft in front of the HTTP interface to manage leader election and replication.
+There are some cases where we need the power of ClickHouse (fast columnar reads, extensive query language, materialized view framework), high availability, and the ability to have consistent reads. In this case, we can stick raft in front of the HTTP interface to manage leader election and replication.
 
 "But you lose the ability to have shards!" I hear you yell.
 
-"Clickhouse shards", yes, but not Clickhouse shards. Multi-group raft serves as the PERFECT tool to introduce sharding at the raft level. Because Clickhouse already makes re-sharding a PITA, we can leverage this fault with using simple hashing for choosing a raft group. I've not figured out how to do that elegantly yet, but it will work once I do! (maybe a connection pool for each hash token).  
+"Clickhouse shards", yes, but not ClickHouse shards. Multi-group raft serves as the PERFECT tool to introduce sharding at the raft level. Because ClickHouse already makes re-sharding a PITA, we can leverage this fault with using simple hashing for choosing a raft group. I've not figured out how to do that elegantly yet, but it will work once I do! (maybe a connection pool for each hash token).
+
+RaftHouse is run on the same node as ClickHouse, similar to how you might run Keeper on the same nodes.
 
 ## Known Limitations
 
@@ -25,6 +27,8 @@ There are some cases where we need the power of Clickhouse (fast columnar reads,
 
 ## Read and Write Endpoints
 
-RaftHouse should be exposed over two endpoints: A read-only eventually consistent endpoint (queries local node), and a leader endpoint (inserts and consistent queries). This generally means making two DNS records, kubernetes services, etc. that will have distinct `host` HTTP headers when accessed by the Clickhouse client over HTTP (eventually consistent operations can actually use the native client, but should NEVER write).
+RaftHouse should be exposed over two endpoints: A read-only eventually consistent endpoint (queries local node), and a leader endpoint (inserts and consistent queries). This generally means making two DNS records, kubernetes services, etc. that will have distinct `host` HTTP headers when accessed by the ClickHouse client over HTTP (eventually consistent operations can actually use the native client, but should NEVER write).
 
 Any time a write occurs, or a setting is changed, it must go over the leader endpoint (read-write).
+
+You don't actually have to define a read-only endpoint. Any `host` value that does not match the `LEADER_HOST` env var will query the local instance of ClickHouse.

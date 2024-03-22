@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/danthegoodman1/GoAPITemplate/observability"
+	"github.com/danthegoodman1/RaftHouse/observability"
+	"github.com/danthegoodman1/RaftHouse/utils"
 	"github.com/joho/godotenv"
 	"net/http"
 	"os"
@@ -12,9 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/danthegoodman1/GoAPITemplate/gologger"
-	"github.com/danthegoodman1/GoAPITemplate/http_server"
-	"github.com/danthegoodman1/GoAPITemplate/utils"
+	// _ "github.com/danthegoodman1/RaftHouse/ch"
+	"github.com/danthegoodman1/RaftHouse/gologger"
+	"github.com/danthegoodman1/RaftHouse/http_server"
 )
 
 var logger = gologger.NewLogger()

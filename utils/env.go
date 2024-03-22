@@ -15,7 +15,4 @@ var (
 
 	// DNS host for requests to the leader. E.g. "leader-rafthouse.svc.default.cluster.local"
 	LEADER_HOST = os.Getenv("LEADER_HOST")
-
-	// DNS host for serving from this node with a read-only user. E.g. "read-rafthouse.svc.default.cluster.local"
-	READ_HOST = os.Getenv("READ_HOST")
 )
