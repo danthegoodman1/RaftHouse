@@ -24,7 +24,7 @@ Insightful question! Not only does this require you integrating raft into your c
 
 _"What about the `insert_quorum` setting?"_
 
-This requires all nodes to be online. Not acceptable because it's not required for consistency.
+This requires all nodes to be online. Not acceptable because it's not required for consistency. What's the point of replicas if you can't insert when they are all alive? In the use cases we're building, we're only selecting during recovery, but inserting all the time, which is the opposite pattern this setting is optimized for.
 
 ## Known Limitations
 
