@@ -1,0 +1,1 @@
+curl -sS "localhost:8080/http_info?param_id=2&param_phrase=test" -d "SELECT * FROM table WHERE int_column = {id:UInt8} and string_column = {phrase:String}"

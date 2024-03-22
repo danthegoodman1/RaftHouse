@@ -48,6 +48,8 @@ func StartHTTPServer() *HTTPServer {
 
 	// technical - no auth
 	s.Echo.GET("/hc", s.HealthCheck)
+	s.Echo.GET("/http_info", ccHandler(s.HTTPInfo))
+	s.Echo.POST("/http_info", ccHandler(s.HTTPInfo))
 
 	s.Echo.Listener = listener
 	go func() {
