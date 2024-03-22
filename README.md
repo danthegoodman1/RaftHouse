@@ -22,6 +22,10 @@ _"Can you just run Raft on each node, and then run your processes as observers t
 
 Insightful question! Not only does this require you integrating raft into your code, or hitting some API to ask for raft, but there are still situations where it could change after the fact. Frankly, this relies too much on the implementation/developer and is a recipe for disaster.
 
+_"What about the `insert_quorum` setting?"_
+
+This requires all nodes to be online. Not acceptable because it's not required for consistency.
+
 ## Known Limitations
 
 1. Cannot do non-deterministic operations like rand and time based stuff for inserts, as results will be different on each node. Do all time and randomness in your code!
