@@ -18,6 +18,10 @@ var (
 	logger = gologger.NewLogger()
 )
 
+const (
+	RaftIndexID = "raft_idx"
+)
+
 func init() {
 	s := time.Now()
 	var err error
@@ -66,16 +70,6 @@ func init() {
 		}
 		logger.Fatal().Err(err).Msg("error pinging RW clickhouse")
 	}
-
-	// Set up a special internal table for the applied raft index
-	err = RWConn.Exec(ctx, `
-	CREATE TABLE raft_index (
-		id UInt32,
-		idx UInt64
-	)
-	ENGINE = ReplacingMergeTree(idx)
-	order by idx desc
-`)
 
 	if err := RConn.Ping(ctx); err != nil {
 		if exception, ok := err.(*clickhouse.Exception); ok {

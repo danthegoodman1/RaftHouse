@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/danthegoodman1/RaftHouse/ch"
 	"github.com/danthegoodman1/RaftHouse/observability"
 	"github.com/danthegoodman1/RaftHouse/utils"
 	"github.com/joho/godotenv"
@@ -60,5 +61,11 @@ func main() {
 		logger.Error().Err(err).Msg("failed to shutdown HTTP server")
 	} else {
 		logger.Info().Msg("successfully shutdown HTTP server")
+	}
+
+	if ch.KV != nil {
+		if err := ch.KV.Close(); err != nil {
+			logger.Error().Err(err).Msg("failed to close KV")
+		}
 	}
 }

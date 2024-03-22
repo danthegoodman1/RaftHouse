@@ -15,4 +15,6 @@ var (
 
 	// DNS host for requests to the leader. E.g. "leader-rafthouse.svc.default.cluster.local"
 	LEADER_HOST = os.Getenv("LEADER_HOST")
+
+	DB_PATH = GetEnvOrDefault("DB_PATH", "/etc/rafthouse")
 )

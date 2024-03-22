@@ -1,14 +1,12 @@
 package ch
 
 import (
-	"context"
-	"database/sql"
-	"errors"
+	"encoding/binary"
 	"fmt"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/lni/dragonboat/v3/statemachine"
 	"io"
-	"time"
 )
 
 type CHStateMachine struct {
@@ -23,21 +21,19 @@ func NewCHStateMachine(conn driver.Conn) statemachine.IOnDiskStateMachine {
 }
 
 func (c *CHStateMachine) Open(stopc <-chan struct{}) (uint64, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-
-	row := c.conn.QueryRow(ctx, "select coalesce(max(idx), 0) from raft_index where id = 0")
-	if err := row.Err(); err != nil {
-		return 0, fmt.Errorf("error in QueryRow: %w", err)
-	}
-
 	var idx uint64
-	if err := row.Scan(&idx); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			// New DB
-			return 0, nil
+	err := KV.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(RaftIndexID))
+		if err != nil {
+			return fmt.Errorf("error in txn.Get: %w", err)
 		}
-		return 0, fmt.Errorf("error in row.Scan: %w", err)
+		return item.Value(func(val []byte) error {
+			binary.LittleEndian.PutUint64(val, idx)
+			return nil
+		})
+	})
+	if err != nil {
+		return 0, fmt.Errorf("error in getting raft index: %w", err)
 	}
 
 	return idx, nil
