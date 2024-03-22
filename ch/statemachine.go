@@ -1,12 +1,14 @@
 package ch
 
 import (
-	"encoding/binary"
+	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
-	"github.com/dgraph-io/badger/v4"
 	"github.com/lni/dragonboat/v3/statemachine"
 	"io"
+	"time"
 )
 
 type CHStateMachine struct {
@@ -21,52 +23,29 @@ func NewCHStateMachine(conn driver.Conn) statemachine.IOnDiskStateMachine {
 }
 
 func (c *CHStateMachine) Open(stopc <-chan struct{}) (uint64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	row := c.conn.QueryRow(ctx, "select coalesce(max(idx), 0) from raft_index where id = 0")
+	if err := row.Err(); err != nil {
+		return 0, fmt.Errorf("error in QueryRow: %w", err)
+	}
+
 	var idx uint64
-	err := KV.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(RaftIndexID))
-		if err != nil {
-			return fmt.Errorf("error in txn.Get: %w", err)
+	if err := row.Scan(&idx); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// New DB
+			return 0, nil
 		}
-		return item.Value(func(val []byte) error {
-			idx = binary.LittleEndian.Uint64(val)
-			return nil
-		})
-	})
-	if err != nil {
-		return 0, fmt.Errorf("error in getting raft index: %w", err)
+		return 0, fmt.Errorf("error in row.Scan: %w", err)
 	}
 
 	return idx, nil
 }
 
 func (c *CHStateMachine) Update(entries []statemachine.Entry) ([]statemachine.Entry, error) {
-	var maxIdx uint64 = 0
-	for idx, ent := range entries {
-		if ent.Index > maxIdx {
-			maxIdx = ent.Index
-		}
-
-		// TODO execute queries to CH
-
-		entries[idx].Result = statemachine.Result{
-			Value: uint64(len(ent.Cmd)), // Just give it something deterministic
-		}
-	}
-
-	var maxIdxBytes []byte
-	binary.LittleEndian.PutUint64(maxIdxBytes, maxIdx)
-	err := KV.Update(func(txn *badger.Txn) error {
-		err := txn.Set([]byte(RaftIndexID), maxIdxBytes)
-		if err != nil {
-			return fmt.Errorf("error in txn.Set: %w", err)
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("error in setting raft index (I probably need a full wipe to recover): %w", err)
-	}
-
-	return entries, nil
+	// TODO implement me
+	panic("implement me")
 }
 
 func (c *CHStateMachine) Lookup(i interface{}) (interface{}, error) {
